@@ -1,3 +1,4 @@
 .env
 test.py
 conversations/*
+!conversations/Sample.txt

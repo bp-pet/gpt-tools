@@ -1,1 +1,1 @@
-## Tools for OpenAI tools like GPT and Dall-e
+## Tools for OpenAI tools like GPT and Dall-E
