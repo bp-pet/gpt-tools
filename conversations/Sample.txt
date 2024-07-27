@@ -1,4 +1,0 @@
-USER INPUT: What are you?
-
-BOT REPLY: I am a helper bot designed to assist you with any questions or tasks you may have. How can I help you today?
-

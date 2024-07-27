@@ -8,16 +8,15 @@ key = os.getenv('GPT_TOKEN')
 
 client = OpenAI(api_key=key)
 
-prompt = "funny frog"
+prompt = 'Test'
 
 response = client.images.generate(
-  model="dall-e-2",
+  model="dall-e-3",
   prompt=prompt,
-  size="256x256",
+  size="1024x1024",
   quality="standard",
   n=1,
 )
 
-image_url = response.data[0].url
-
-print(image_url)                 
+for i in response.data:
+  print(i.url)

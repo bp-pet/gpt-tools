@@ -111,13 +111,16 @@ class GPTclient:
             user_input = input('Print conversation history? (y/N)? ')
             print()
             if user_input.lower() in ['y', 'yes']:
-                print(self.history)
+                print(self.history, end='')
+
+        print('Ask a question or write STOP to go back to the menu:\n')
 
         while True:
 
             context = f'You are a helper bot, continuing a conversation. Here is the existing history:\n\n{self.history}End of history. Try to make your answers relatively short.'
 
-            user_input = input('Ask a question or write STOP to go back to the menu:\n\n')
+            print('USER INPUT: ', end='')
+            user_input = input()
             print()
 
             if user_input == 'STOP':
@@ -132,11 +135,11 @@ class GPTclient:
             ]
             )
 
-            bot_answer = completion.choices[0].message.content
+            bot_answer = '\033[94m' + 'BOT REPLY: ' + completion.choices[0].message.content + '\033[0m'
             print(bot_answer)
             print()
 
-            self.history += f'USER INPUT: {user_input}\n\nBOT REPLY: {bot_answer}\n\n'
+            self.history += f'USER INPUT: {user_input}\n\n{bot_answer}\n\n'
 
             with open(f'{CONVERSATIONS_DIRECTORY}\\{self.selected_conv_name}.txt', 'w') as f:
                 f.write(self.history)
