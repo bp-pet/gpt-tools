@@ -9,6 +9,12 @@ key = os.getenv('GPT_TOKEN')
 
 CONVERSATIONS_DIRECTORY = 'conversations'
 
+class UserInputError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+class UserExit(Exception):
+    pass
 
 class GPTclient:
     def __init__(self):
@@ -16,35 +22,54 @@ class GPTclient:
         self.history = None
         self.conv_file_names = None
 
+        self.client = OpenAI(api_key=key)
+
     def load_conversation_names(self):
         self.conv_file_names = [f for f in os.listdir('conversations') if os.path.isfile(os.path.join('conversations', f))]
-        if len(self.conv_file_names) == 0:
-            print('No conversations to select from.')
+        if len(self.conv_file_names) <= 1:
+            print('No conversations to select from, start a new one!')
         else:
             print('Available conversations:')
             counter = 1
             for conv_file_name in self.conv_file_names:
-                print(f'{counter} - {conv_file_name[:-4]}')
-                counter += 1
+                if conv_file_name != 'dummy.txt':
+                    print(f'{counter} - {conv_file_name[:-4]}')
+                    counter += 1
     
+    def test_token(self):
+        self.client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": 'test'},
+                {"role": "user", "content": 'test'}
+            ]
+            )
+
     def run(self):
+        try:
+            self.test_token()
+        except Exception as e:
+            print(e)
+            return
+
         while True:
+            self.select_conversation_menu()
+            if self.history is None:
+                return
+            
             try:
-                self.load_history()
-                if self.history is None:
-                    return
                 self.do_conversation()
-            except:
+            except UserExit:
                 continue
 
-    def load_history(self):
+    def select_conversation_menu(self):
         
         print()
         print('Welcome to the Bojodojo GPT client!')
         print()
         print('Possible commands:')
-        print('CONTINUE [n] - continue conversation with given index (e.g. \'CONTINUE 3\')')
         print('NEW [title] - start new conversation with given name (e.g. \'NEW Pet name ideas\')')
+        print('CONTINUE [n] - continue conversation with given index (e.g. \'CONTINUE 3\')')
         print('DELETE [n] - delete conversation with given index (e.g. \'DELETE 2\')')
         print('STOP - to exit program')
         print()
@@ -63,13 +88,13 @@ class GPTclient:
                     return
  
                 if len(substance) == 0:
-                    raise Exception('Missing index or title')
+                    raise UserInputError('Missing index or title')
 
                 if command == 'CONTINUE':
                     if not substance.isdigit():
-                        raise Exception('Conversation index not integer')
+                        raise UserInputError('Conversation index not integer')
                     if int(substance) > len(self.conv_file_names):
-                        raise Exception('Conversation index out of range')
+                        raise UserInputError('Conversation index out of range')
                     conv_file_name = self.conv_file_names[int(substance) - 1]
                     with open(f'{CONVERSATIONS_DIRECTORY}\\{conv_file_name}') as f:
                         self.history = f.read()
@@ -85,9 +110,20 @@ class GPTclient:
 
                 elif command == 'DELETE':
                     if not substance.isdigit():
-                        raise Exception('Conversation index not integer')
+
+                        # remove all conversations
+                        if substance == 'ALL':
+                            for conv_name in self.conv_file_names:
+                                if conv_name != 'dummy.txt':
+                                    os.remove(f'{CONVERSATIONS_DIRECTORY}\\{conv_name}')
+                            self.load_conversation_names()
+                            print()
+                            continue
+
+                        else:
+                            raise UserInputError('Conversation index not integer')
                     if int(substance) > len(self.conv_file_names):
-                        raise Exception('Conversation index out of range')
+                        raise UserInputError('Conversation index out of range')
                     conv_name_to_remove = self.conv_file_names[int(substance) - 1]
                     os.remove(f'{CONVERSATIONS_DIRECTORY}\\{conv_name_to_remove}')
                     self.load_conversation_names()
@@ -95,17 +131,14 @@ class GPTclient:
                     continue
 
                 else:
-                    raise Exception('Command does not exist')
+                    raise UserInputError('Command does not exist')
 
-            except Exception as e:
+            except UserInputError as e:
                 print(f'Invalid command ({e}), try again.')
                 print()
-                pass
 
     
     def do_conversation(self):
-
-        self.client = OpenAI(api_key=key)
 
         if len(self.history) > 0:
             user_input = input('Print conversation history? (y/N)? ')
@@ -113,7 +146,7 @@ class GPTclient:
             if user_input.lower() in ['y', 'yes']:
                 print(self.history, end='')
 
-        print('Ask a question or write STOP to go back to the menu:\n')
+        print('Ask a question, or type LOAD to load it from input file, or write STOP to go back to the menu:\n')
 
         while True:
 
@@ -125,7 +158,11 @@ class GPTclient:
 
             if user_input == 'STOP':
                 self.history = None
-                raise Exception
+                raise UserExit()
+            
+            if user_input == 'LOAD':
+                with open(f'input\\input.txt') as f:
+                    user_input = f.read()
 
             completion = self.client.chat.completions.create(
             model="gpt-3.5-turbo",

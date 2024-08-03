@@ -1,0 +1,4 @@
+Which of these are names of countries:
+Canada
+Pineapple
+Argentina

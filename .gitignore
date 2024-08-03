@@ -1,4 +1,4 @@
 .env
 test.py
 conversations/*
-!conversations/Sample.txt
+!conversations/dummy.txt
