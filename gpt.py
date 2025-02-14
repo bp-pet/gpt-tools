@@ -9,6 +9,11 @@ key = os.getenv('GPT_TOKEN')
 
 CONVERSATIONS_DIRECTORY = 'conversations'
 
+MODEL = 'gpt-4o'
+
+EXTRA_CONTEXT = 'Try to make your answers relatively short.'
+
+
 class UserInputError(Exception):
     def __init__(self, message):
         self.message = message
@@ -25,20 +30,19 @@ class GPTclient:
         self.client = OpenAI(api_key=key)
 
     def load_conversation_names(self):
-        self.conv_file_names = [f for f in os.listdir('conversations') if os.path.isfile(os.path.join('conversations', f))]
+        self.conv_file_names = [f for f in os.listdir('conversations') if os.path.isfile(os.path.join('conversations', f)) and f != 'dummy.txt']
         if len(self.conv_file_names) <= 1:
             print('No conversations to select from, start a new one!')
         else:
             print('Available conversations:')
             counter = 1
             for conv_file_name in self.conv_file_names:
-                if conv_file_name != 'dummy.txt':
-                    print(f'{counter} - {conv_file_name[:-4]}')
-                    counter += 1
+                print(f'{counter} - {conv_file_name[:-4]}')
+                counter += 1
     
     def test_token(self):
         self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": 'test'},
                 {"role": "user", "content": 'test'}
@@ -150,7 +154,7 @@ class GPTclient:
 
         while True:
 
-            context = f'You are a helper bot, continuing a conversation. Here is the existing history:\n\n{self.history}End of history. Try to make your answers relatively short.'
+            context = f'You are a helper bot, continuing a conversation. Here is the existing history:\n\n{self.history}End of history. {EXTRA_CONTEXT}'
 
             print('USER INPUT: ', end='')
             user_input = input()
